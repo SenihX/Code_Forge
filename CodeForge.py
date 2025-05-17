@@ -4,24 +4,32 @@ import subprocess
 import os
 import webbrowser
 
-# Ana pencere
+BG_COLOR = "#1e1e2f"
+FG_COLOR = "#ffffff"
+ACCENT_COLOR = "#4CAF50"
+BUTTON_COLOR = "#2e2e3e"
+HOVER_COLOR = "#3e3e5e"
+
 root = tk.Tk()
-root.title("CodeForge EXE Builder - by Mr.SenihX")
-root.state("zoomed")  # Tam ekran
-root.configure(bg="#1e1e1e")
+root.title("CodeForge v2.0 - EXE Builder by Mr.SenihX")
+root.geometry("780x560")
+root.configure(bg=BG_COLOR)
+root.resizable(False, False)
 
 selected_file = tk.StringVar()
-output_path = tk.StringVar()
 
-# ------------------ Fonksiyonlar ------------------ #
+def on_enter(e, widget, color=HOVER_COLOR):
+    widget['bg'] = color
+
+def on_leave(e, widget, color=BUTTON_COLOR):
+    widget['bg'] = color
 
 def select_file():
     file_path = filedialog.askopenfilename(
-        filetypes=[("Supported Files", "*.py *.c *.cpp *.js")]
+        filetypes=[("Desteklenen Dosyalar", "*.py *.c *.cpp *.js")]
     )
     if file_path:
         selected_file.set(file_path)
-        output_path.set("")  # Önceki sonucu temizle
 
 def convert_to_exe():
     file_path = selected_file.get()
@@ -33,126 +41,92 @@ def convert_to_exe():
 
     if ext == ".py":
         try:
-            subprocess.run(["pyinstaller", "--onefile", file_path], check=True)
-            dist_path = os.path.join(os.getcwd(), "dist", os.path.basename(file_path).replace(".py", ".exe"))
-            if os.path.exists(dist_path):
-                output_path.set(f"✅ EXE Kaydedildi: {dist_path}")
-                messagebox.showinfo("Başarılı", f".exe dosyası oluşturuldu:\n{dist_path}")
-            else:
-                output_path.set("⚠️ EXE oluşturuldu ama dosya bulunamadı.")
+            subprocess.run(["pyinstaller", "--onefile", "--noconsole", "--clean", file_path], check=True)
+            exe_name = os.path.splitext(os.path.basename(file_path))[0] + ".exe"
+            exe_path = os.path.abspath(os.path.join("dist", exe_name))
+            messagebox.showinfo("Başarılı", f".exe dosyası başarıyla oluşturuldu!\n\n📁 Konum:\n{exe_path}")
         except subprocess.CalledProcessError:
             messagebox.showerror("Hata", ".exe oluşturulamadı. PyInstaller kurulu mu?")
     else:
         messagebox.showwarning("Desteklenmeyen", f"{ext} uzantısı şu an desteklenmiyor.")
 
-def open_link(url):
-    webbrowser.open_new_tab(url)
-
-# ------------------ Stil Fonksiyonu ------------------ #
-def style_button(btn, normal_bg, hover_bg):
-    def on_enter(e): btn["bg"] = hover_bg
-    def on_leave(e): btn["bg"] = normal_bg
-    btn.bind("<Enter>", on_enter)
-    btn.bind("<Leave>", on_leave)
-
-# ------------------ Arayüz ------------------ #
-title = tk.Label(
-    root,
-    text="CodeForge EXE Builder",
-    font=("Segoe UI", 36, "bold"),
-    fg="white",
-    bg="#1e1e1e"
-)
-title.pack(pady=30)
-
-subtitle = tk.Label(
-    root,
-    text="📦 Kodlarını tek tıklamayla .exe dosyasına dönüştür!",
-    font=("Segoe UI", 16),
-    fg="gray",
-    bg="#1e1e1e"
-)
-subtitle.pack()
-
-select_btn = tk.Button(
-    root,
-    text="📂 Dosya Seç",
-    command=select_file,
-    font=("Segoe UI", 12),
-    bg="#0078D7",
-    fg="white",
-    padx=15,
-    pady=7,
-    relief="flat",
-    activebackground="#005a9e"
-)
-select_btn.pack(pady=25)
-style_button(select_btn, "#0078D7", "#005a9e")
-
-file_label = tk.Label(
-    root,
-    textvariable=selected_file,
-    font=("Segoe UI", 11),
-    bg="#1e1e1e",
-    fg="white"
-)
-file_label.pack()
-
-convert_btn = tk.Button(
-    root,
-    text="⚙️ EXE'ye Dönüştür",
-    command=convert_to_exe,
-    font=("Segoe UI", 14, "bold"),
-    bg="#28a745",
-    fg="white",
-    padx=20,
-    pady=10,
-    relief="flat",
-    activebackground="#1c7c35"
-)
-convert_btn.pack(pady=30)
-style_button(convert_btn, "#28a745", "#1c7c35")
-
-output_label = tk.Label(
-    root,
-    textvariable=output_path,
-    font=("Segoe UI", 12),
-    bg="#1e1e1e",
-    fg="#00ffcc"
-)
-output_label.pack(pady=10)
-
-# ------------------ Tıklanabilir Sosyal Medya Linkleri ------------------ #
-social_frame = tk.Frame(root, bg="#1e1e1e")
-social_frame.pack(pady=50)
-
-links = [
-    ("🌐 GitHub", "https://github.com/SenihX"),
-    ("🛡️ TryHackMe", "https://tryhackme.com/p/Mr.SenihX"),
-    ("𝕏 Twitter", "https://x.com/SenihX_")
-]
-
-for text, url in links:
-    link_label = tk.Label(
-        social_frame,
+def create_button(text, command):
+    btn = tk.Button(
+        root,
         text=text,
-        font=("Segoe UI", 10, "underline"),
-        fg="#1e90ff",
-        bg="#1e1e1e",
+        command=command,
+        font=("Segoe UI", 10, "bold"),
+        bg=BUTTON_COLOR,
+        fg=FG_COLOR,
+        activebackground=HOVER_COLOR,
+        activeforeground="white",
+        relief="flat",
+        padx=20,
+        pady=10,
         cursor="hand2"
     )
-    link_label.pack(side="left", padx=20)
-    link_label.bind("<Button-1>", lambda e, url=url: open_link(url))
-    style_button(link_label, "#1e1e1e", "#2e2e2e")
+    btn.bind("<Enter>", lambda e: on_enter(e, btn))
+    btn.bind("<Leave>", lambda e: on_leave(e, btn))
+    return btn
 
-# ------------------ Alt Bilgi ------------------ #
-footer = tk.Label(
+tk.Label(
     root,
-    text="Mr.SenihX tarafından tasarlanmıştır • 2025",
+    text="⚙️ CodeForge v2.0",
+    font=("Segoe UI", 22, "bold"),
+    fg=FG_COLOR,
+    bg=BG_COLOR
+).pack(pady=20)
+
+tk.Label(
+    root,
+    text="Kodlarını tek tıkla .exe dosyasına dönüştür!",
+    font=("Segoe UI", 11),
+    fg="lightgray",
+    bg=BG_COLOR
+).pack()
+
+create_button("📂 Dosya Seç", select_file).pack(pady=20)
+
+tk.Label(
+    root,
+    textvariable=selected_file,
     font=("Segoe UI", 9),
-    fg="gray",
-    bg="#1e1e1e"
-)
+    bg=BG_COLOR,
+    fg="lightgray"
+).pack()
+
+create_button("🚀 EXE'ye Dönüştür", convert_to_exe).pack(pady=30)
+
+def open_link(url):
+    webbrowser.open_new(url)
+
+footer = tk.Frame(root, bg=BG_COLOR)
 footer.pack(side="bottom", pady=10)
+
+tk.Label(
+    footer,
+    text="📌 Mr.SenihX tarafından tasarlanmıştır",
+    font=("Segoe UI", 8),
+    fg="gray",
+    bg=BG_COLOR
+).pack()
+
+links = {
+    "🌐 GitHub": "https://github.com/SenihX",
+    "🛡️ TryHackMe": "https://tryhackme.com/p/Mr.SenihX",
+    "𝕏 Twitter": "https://x.com/SenihX_"
+}
+
+for name, url in links.items():
+    link = tk.Label(
+        footer,
+        text=name,
+        font=("Segoe UI", 9, "underline"),
+        fg="#00bfff",
+        bg=BG_COLOR,
+        cursor="hand2"
+    )
+    link.pack(side="left", padx=8)
+    link.bind("<Button-1>", lambda e, u=url: open_link(u))
 
 root.mainloop()
